@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import graphql.execution.batched.Batched;
 import graphql.execution.batched.BatchedDataFetcher;
@@ -58,10 +59,16 @@ public class ResolverDataFetcher implements DataFetcher {
         }
         if (isNull(resolver) && isNull(asyncResolver)) return result;
         final int finalDepth = depth;
-        return isNull(asyncResolver) ?
-          replaceResolved(result, resolver.resolve(unresolved).iterator(), depth) :
-          asyncResolver.resolve(unresolved)
-            .thenApplyAsync(resolved -> replaceResolved(result, resolved.iterator(), finalDepth));
+        if (isNull(asyncResolver)) {
+            return replaceResolved(result, resolver.resolve(unresolved).iterator(), depth);
+        }
+        CompletableFuture<List<Object>> resolve;
+        if (isNull(env.getContext())) {
+            resolve = asyncResolver.resolve(unresolved);
+        } else {
+            resolve = asyncResolver.resolve(env.getContext(), unresolved);
+        }
+        return resolve.thenApplyAsync(resolved -> replaceResolved(result, resolved.iterator(), finalDepth));
     }
 
     public Object replaceResolved(Object result, Iterator<Object> resolved, int depth) {

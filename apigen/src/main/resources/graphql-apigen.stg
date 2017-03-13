@@ -99,6 +99,7 @@ public interface <model.name> {
     }
     public static interface AsyncResolver extends com.distelli.graphql.AsyncResolver\<<model.name>\> {
         public CompletableFuture\<List\<<model.name>\>> resolve(List\<<model.name>\> list);
+        public CompletableFuture\<List\<<model.name>\>> resolve(Object context, List\<<model.name>\> list);
     }
 <endif>
 <model.fields:{ it |
